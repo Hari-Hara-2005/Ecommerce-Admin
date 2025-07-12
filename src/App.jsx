@@ -4,6 +4,7 @@ import { DashboardOverview } from "./components/DashboardOverview";
 import { ProductManagement } from "./components/ProductManagement";
 import { SidebarProvider } from "./components/ui/sidebar";
 import { CategoryMangement } from "./components/CategoryMangement";
+import { BannerManagement } from "./components/BAnnerManagement";
 
 export default function App() {
   const [activeSection, setActiveSection] = useState("dashboard");
@@ -16,6 +17,8 @@ export default function App() {
         return <ProductManagement />;
       case "category":
         return <CategoryMangement />;
+      case "banner":
+        return <BannerManagement />;
       default:
         return <DashboardOverview />;
     }

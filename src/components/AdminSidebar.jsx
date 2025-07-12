@@ -39,6 +39,11 @@ const menuItems = [
     id: "category",
   },
   {
+    title: "Banner",
+    icon: ShoppingCart,
+    id: "banner",
+  },
+  {
     title: "Orders",
     icon: ShoppingCart,
     id: "orders",
