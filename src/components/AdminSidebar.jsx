@@ -43,31 +43,6 @@ const menuItems = [
     icon: ShoppingCart,
     id: "banner",
   },
-  {
-    title: "Orders",
-    icon: ShoppingCart,
-    id: "orders",
-  },
-  {
-    title: "Customers",
-    icon: Users,
-    id: "customers",
-  },
-  {
-    title: "Analytics",
-    icon: BarChart3,
-    id: "analytics",
-  },
-  {
-    title: "Reports",
-    icon: FileText,
-    id: "reports",
-  },
-  {
-    title: "Settings",
-    icon: Settings,
-    id: "settings",
-  },
 ];
 
 export function AdminSidebar({ activeSection, setActiveSection }) {
@@ -81,7 +56,7 @@ export function AdminSidebar({ activeSection, setActiveSection }) {
           <div className="grid flex-1 text-left text-sm leading-tight">
             <span className="truncate font-semibold">Admin Panel</span>
             <span className="truncate text-xs text-muted-foreground">
-              E-commerce Dashboard
+              Smartdryfruits Dashboard
             </span>
           </div>
         </div>
@@ -109,10 +84,15 @@ export function AdminSidebar({ activeSection, setActiveSection }) {
       </SidebarContent>
 
       <SidebarFooter className="p-4">
-        <Button className="w-full" size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Quick Add
-        </Button>
+        <p className="text-muted-foreground text-xs">
+          Designed & Developed by{"  "}
+          <a
+            href="https://harihara.vercel.app/"
+            style={{ color: "gray", textDecoration: "none" }}
+          >
+            Hari Hara
+          </a>
+        </p>
       </SidebarFooter>
     </Sidebar>
   );
