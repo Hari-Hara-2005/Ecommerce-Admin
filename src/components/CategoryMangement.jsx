@@ -30,19 +30,28 @@ import { Plus, Edit, Trash2, ImageIcon } from "lucide-react";
 import axios from "axios";
 import { useEffect } from "react";
 import { DialogClose } from "@radix-ui/react-dialog";
+import { uploadToCloudinary } from "../../utils/uploadToCloudinary";
 export function CategoryMangement() {
   const [name, setName] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [category, setCategory] = useState([]);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [categoryId, setCategoryId] = useState(undefined);
+  const [imageFile, setImageFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [addLoading, setAddLoading] = useState(false);
   const handleAddProduct = async (e) => {
     e.preventDefault();
     try {
+      setAddLoading(true);
+      let imageData = {};
+      if (imageFile) imageData = await uploadToCloudinary(imageFile);
       const data = await axios.post(
         `${import.meta.env.VITE_API_BASE_URL}/api/category`,
         {
           name,
+          image_url: imageData.url || "",
+          public_id: imageData.public_id || "",
         }
       );
       if (data.status === 200) {
@@ -50,9 +59,13 @@ export function CategoryMangement() {
       }
       setIsAddDialogOpen(false);
       setName("");
+      setImageFile("");
+      setPreviewUrl("");
       categoryDetails();
     } catch (error) {
       console.log(error.message);
+    } finally {
+      setAddLoading(false);
     }
   };
   const categoryDetails = async () => {
@@ -71,6 +84,7 @@ export function CategoryMangement() {
 
   const handleDeleteCategory = async (id) => {
     try {
+      setAddLoading(true);
       await axios.delete(
         ` ${import.meta.env.VITE_API_BASE_URL}/api/category/${id}`
       );
@@ -78,15 +92,25 @@ export function CategoryMangement() {
       categoryDetails();
     } catch (error) {
       console.log(error.message);
+    } finally {
+      setAddLoading(false);
     }
   };
 
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
+      setAddLoading(true);
+      let imageData = {};
+      if (imageFile) imageData = await uploadToCloudinary(imageFile);
+
       const response = await axios.put(
         ` ${import.meta.env.VITE_API_BASE_URL}/api/category/${categoryId}`,
-        { name }
+        {
+          name,
+          image_url: imageData.url || "",
+          public_id: imageData.public_id || "",
+        }
       );
       if (response.status === 200) {
         console.log("Update Sucessfully..!");
@@ -95,6 +119,8 @@ export function CategoryMangement() {
       }
     } catch (error) {
       console.log(error.message);
+    } finally {
+      setAddLoading(false);
     }
   };
 
@@ -141,6 +167,33 @@ export function CategoryMangement() {
                   />
                 </div>
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="image">Category Image</Label>
+                <div className="flex items-center gap-4">
+                  <Input
+                    id="image"
+                    type="file"
+                    accept="image/*"
+                    required
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      setImageFile(file);
+                      setPreviewUrl(file ? URL.createObjectURL(file) : null);
+                    }}
+                  />
+                  <div className="w-24 h-24 border border-dashed rounded-md flex items-center justify-center bg-muted">
+                    {previewUrl ? (
+                      <img
+                        src={previewUrl}
+                        className="w-full h-full object-cover rounded"
+                        alt="Preview"
+                      />
+                    ) : (
+                      <ImageIcon className="text-muted-foreground w-6 h-6" />
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
             <div className="flex justify-end gap-2">
               <Button
@@ -149,7 +202,9 @@ export function CategoryMangement() {
               >
                 Cancel
               </Button>
-              <Button onClick={handleAddProduct}>Add Category</Button>
+              <Button onClick={handleAddProduct} disabled={addLoading}>
+                {addLoading ? "..." : "Add Category"}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -165,6 +220,7 @@ export function CategoryMangement() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Image</TableHead>
                 <TableHead>Category Name</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -172,6 +228,13 @@ export function CategoryMangement() {
             <TableBody>
               {category.map((category) => (
                 <TableRow key={category.category_id}>
+                  <TableCell>
+                    <img
+                      src={category.category_image || "/placeholder.svg"}
+                      className="w-20 h-20 object-cover rounded-md border"
+                      alt="category"
+                    />
+                  </TableCell>
                   <TableCell>{category.category_name}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -189,7 +252,7 @@ export function CategoryMangement() {
                               <Edit className="h-4 w-4" />
                             </Button>
                           </DialogTrigger>
-                          <DialogContent className="sm:max-w-[425px]">
+                          <DialogContent className="sm:max-w-[650px]">
                             <DialogHeader>
                               <DialogTitle>Edit Product</DialogTitle>
                               <DialogDescription>
@@ -209,13 +272,46 @@ export function CategoryMangement() {
                                   />
                                 </div>
                               </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="image">Category Image</Label>
+                                <div className="flex items-center gap-4">
+                                  <Input
+                                    id="image"
+                                    type="file"
+                                    accept="image/*"
+                                    required
+                                    onChange={(e) => {
+                                      const file = e.target.files[0];
+                                      setImageFile(file);
+                                      setPreviewUrl(
+                                        file ? URL.createObjectURL(file) : null
+                                      );
+                                    }}
+                                  />
+                                  <div className="w-24 h-24 border border-dashed rounded-md flex items-center justify-center bg-muted">
+                                    {previewUrl ? (
+                                      <img
+                                        src={previewUrl}
+                                        className="w-full h-full object-cover rounded"
+                                        alt="Preview"
+                                      />
+                                    ) : (
+                                      <ImageIcon className="text-muted-foreground w-6 h-6" />
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
                             </div>
                             <DialogFooter>
                               <DialogClose asChild>
                                 <Button variant="outline">Cancel</Button>
                               </DialogClose>
-                              <Button type="submit" onClick={handleUpdate}>
-                                Save changes
+                              <Button
+                                type="submit"
+                                onClick={handleUpdate}
+                                disabled={addLoading}
+                              >
+                                {addLoading ? "..." : "Save Changes"}
                               </Button>
                             </DialogFooter>
                           </DialogContent>
@@ -227,8 +323,9 @@ export function CategoryMangement() {
                         onClick={() =>
                           handleDeleteCategory(category.category_id)
                         }
+                        disabled={addLoading}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        {addLoading ? "..." : <Trash2 className="h-4 w-4" />}
                       </Button>
                     </div>
                   </TableCell>
