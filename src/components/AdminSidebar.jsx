@@ -43,6 +43,11 @@ const menuItems = [
     icon: ShoppingCart,
     id: "banner",
   },
+  {
+    title: "TopBar",
+    icon: ShoppingCart,
+    id: "topbar",
+  },
 ];
 
 export function AdminSidebar({ activeSection, setActiveSection }) {

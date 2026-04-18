@@ -270,7 +270,7 @@ export function BannerManagement() {
                   </TableCell>
 
                   <TableCell>{banner.link}</TableCell>
-                  <TableCell>{banner.is_mobile ? "Yes" : "No"}</TableCell>
+                  <TableCell>{banner.is_active ? "Yes" : "No"}</TableCell>
 
                   <TableCell className="flex gap-2 justify-end">
                     <Button size="icon" onClick={() => handleEdit(banner)}>
