@@ -37,20 +37,27 @@ export function BannerManagement() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [banners, setBanner] = useState([]);
   const [Id, setId] = useState("");
+
   const [imageFile, setImageFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+
+  const [link, setLink] = useState("");
+  const [isMobile, setIsMobile] = useState(false);
+
   const [addLoading, setAddLoading] = useState(false);
 
   const resetForm = () => {
     setImageFile(null);
     setId("");
     setPreviewUrl(null);
+    setLink("");
+    setIsMobile(false);
   };
 
   const bannerDetails = async () => {
     try {
       const res = await axios.get(
-        `${import.meta.env.VITE_API_BASE_URL}/api/banner`
+        `${import.meta.env.VITE_API_BASE_URL}/api/banner`,
       );
       setBanner(res.data);
     } catch (err) {
@@ -62,9 +69,11 @@ export function BannerManagement() {
     bannerDetails();
   }, []);
 
+  // ✅ ADD BANNER
   const handleAddBanner = async (e) => {
     e.preventDefault();
     setAddLoading(true);
+
     try {
       let imageData = {};
       if (imageFile) imageData = await uploadToCloudinary(imageFile);
@@ -74,7 +83,9 @@ export function BannerManagement() {
         {
           image_url: imageData.url || "",
           public_id: imageData.public_id || "",
-        }
+          link: link,
+          is_mobile: isMobile,
+        },
       );
 
       if (res.status === 200) {
@@ -90,8 +101,10 @@ export function BannerManagement() {
     }
   };
 
+  // ✅ UPDATE BANNER
   const handleUpdate = async (e) => {
     e.preventDefault();
+
     try {
       let imageData = {};
       if (imageFile) imageData = await uploadToCloudinary(imageFile);
@@ -101,7 +114,9 @@ export function BannerManagement() {
         {
           image_url: imageData.url || undefined,
           public_id: imageData.public_id || undefined,
-        }
+          link: link,
+          is_mobile: isMobile,
+        },
       );
 
       if (res.status === 200) {
@@ -114,11 +129,12 @@ export function BannerManagement() {
     }
   };
 
+  // ✅ DELETE
   const handleDeleteBanner = async (id) => {
     setAddLoading(true);
     try {
       await axios.delete(
-        `${import.meta.env.VITE_API_BASE_URL}/api/banner/${id}`
+        `${import.meta.env.VITE_API_BASE_URL}/api/banner/${id}`,
       );
       bannerDetails();
     } catch (err) {
@@ -128,8 +144,12 @@ export function BannerManagement() {
     }
   };
 
+  // ✅ EDIT LOAD DATA
   const handleEdit = (banner) => {
     setId(banner.id);
+    setLink(banner.link || "");
+    setIsMobile(banner.is_mobile || false);
+    setPreviewUrl(banner.image_url);
     setIsEditDialogOpen(true);
   };
 
@@ -141,24 +161,26 @@ export function BannerManagement() {
           <p className="text-muted-foreground">Add, edit or remove banners</p>
         </div>
 
-        {/* Add Banner Dialog */}
+        {/* ADD DIALOG */}
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="w-4 h-4 mr-2" /> Add Banner
             </Button>
           </DialogTrigger>
+
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Add New Banner</DialogTitle>
-              <DialogDescription>Upload a new banner image</DialogDescription>
+              <DialogDescription>Upload banner + add link</DialogDescription>
             </DialogHeader>
+
             <form onSubmit={handleAddBanner} className="space-y-4">
+              {/* IMAGE */}
               <div className="space-y-2">
-                <Label htmlFor="image">Banner Image</Label>
+                <Label>Banner Image</Label>
                 <div className="flex items-center gap-4">
                   <Input
-                    id="image"
                     type="file"
                     accept="image/*"
                     required
@@ -168,19 +190,42 @@ export function BannerManagement() {
                       setPreviewUrl(file ? URL.createObjectURL(file) : null);
                     }}
                   />
-                  <div className="w-24 h-24 border border-dashed rounded-md flex items-center justify-center bg-muted">
+
+                  <div className="w-24 h-24 border rounded flex items-center justify-center">
                     {previewUrl ? (
                       <img
                         src={previewUrl}
                         className="w-full h-full object-cover rounded"
-                        alt="Preview"
+                        alt="preview"
                       />
                     ) : (
-                      <ImageIcon className="text-muted-foreground w-6 h-6" />
+                      <ImageIcon />
                     )}
                   </div>
                 </div>
               </div>
+
+              {/* LINK */}
+              <div className="space-y-2">
+                <Label>Banner Link</Label>
+                <Input
+                  type="text"
+                  placeholder="https://example.com"
+                  value={link}
+                  onChange={(e) => setLink(e.target.value)}
+                />
+              </div>
+
+              {/* MOBILE */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={isMobile}
+                  onChange={(e) => setIsMobile(e.target.checked)}
+                />
+                <Label>Is Mobile Banner</Label>
+              </div>
+
               <div className="flex justify-end gap-2">
                 <Button
                   variant="outline"
@@ -197,98 +242,87 @@ export function BannerManagement() {
         </Dialog>
       </div>
 
+      {/* TABLE */}
       <Card>
         <CardHeader>
           <CardTitle>All Banners</CardTitle>
-          <CardDescription>
-            Click edit or delete to modify banners
-          </CardDescription>
         </CardHeader>
-        <CardContent>
-          {banners.length === 0 ? (
-            <div className="text-center text-sm text-muted-foreground py-10">
-              No banners added yet.
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Image</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {banners.map((banner) => (
-                  <TableRow key={banner.id}>
-                    <TableCell>
-                      <img
-                        src={banner.image_url || "/placeholder.svg"}
-                        className="w-20 h-20 object-cover rounded-md border"
-                        alt="banner"
-                      />
-                    </TableCell>
-                    <TableCell className="flex justify-end gap-2">
-                      {/* Edit Dialog */}
-                      <Dialog
-                        open={isEditDialogOpen}
-                        onOpenChange={setIsEditDialogOpen}
-                      >
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => handleEdit(banner)}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-xl">
-                          <DialogHeader>
-                            <DialogTitle>Edit Banner</DialogTitle>
-                          </DialogHeader>
-                          <form onSubmit={handleUpdate} className="space-y-4">
-                            <div className="space-y-2">
-                              <Label>Update Image</Label>
-                              <Input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) =>
-                                  setImageFile(e.target.files[0])
-                                }
-                              />
-                            </div>
-                            <DialogFooter>
-                              <DialogClose asChild>
-                                <Button variant="outline" onClick={resetForm}>
-                                  Cancel
-                                </Button>
-                              </DialogClose>
-                              <Button type="submit">Save</Button>
-                            </DialogFooter>
-                          </form>
-                        </DialogContent>
-                      </Dialog>
 
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => handleDeleteBanner(banner.id)}
-                        disabled={addLoading}
-                      >
-                        {addLoading ? (
-                          <span className="text-xs">...</span>
-                        ) : (
-                          <Trash2 className="w-4 h-4" />
-                        )}
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Image</TableHead>
+                <TableHead>Link</TableHead>
+                <TableHead>Mobile</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+
+            <TableBody>
+              {banners.map((banner) => (
+                <TableRow key={banner.id}>
+                  <TableCell>
+                    <img
+                      src={banner.image_url}
+                      className="w-20 h-20 object-cover"
+                    />
+                  </TableCell>
+
+                  <TableCell>{banner.link}</TableCell>
+                  <TableCell>{banner.is_mobile ? "Yes" : "No"}</TableCell>
+
+                  <TableCell className="flex gap-2 justify-end">
+                    <Button size="icon" onClick={() => handleEdit(banner)}>
+                      <Edit />
+                    </Button>
+
+                    <Button
+                      size="icon"
+                      onClick={() => handleDeleteBanner(banner.id)}
+                    >
+                      <Trash2 />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
+
+      {/* EDIT DIALOG */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Banner</DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleUpdate} className="space-y-4">
+            <Input
+              type="file"
+              onChange={(e) => setImageFile(e.target.files[0])}
+            />
+
+            <Input
+              value={link}
+              onChange={(e) => setLink(e.target.value)}
+              placeholder="Link"
+            />
+
+            <div className="flex gap-2 items-center">
+              <input
+                type="checkbox"
+                checked={isMobile}
+                onChange={(e) => setIsMobile(e.target.checked)}
+              />
+              <Label>Mobile Banner</Label>
+            </div>
+
+            <Button type="submit">Update</Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
