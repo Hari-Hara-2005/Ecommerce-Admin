@@ -31,7 +31,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "./ui/dialog";
-import { Plus, Edit, Trash2, ImageIcon } from "lucide-react";
+import { Plus, Edit, Trash2 } from "lucide-react";
 import axios from "axios";
 import { uploadToCloudinary } from "../../utils/uploadToCloudinary";
 
@@ -158,10 +158,6 @@ export function ProductManagement() {
     setStrikePrice(p.strikeout_price);
     setRating(p.rating);
     setLabel(p.label);
-
-    setPreviewUrl(p.image_url);
-    setHoverPreview(p.hover_image);
-
     setIsEditDialogOpen(true);
   };
 
@@ -173,10 +169,6 @@ export function ProductManagement() {
     setStrikePrice("");
     setRating("");
     setLabel("");
-    setImageFile(null);
-    setHoverImageFile(null);
-    setPreviewUrl(null);
-    setHoverPreview(null);
     setProductId("");
   };
 
@@ -200,121 +192,160 @@ export function ProductManagement() {
     productDetails();
   }, []);
 
+  // ================= SHARED FORM FIELDS =================
+  const renderFormFields = (onSubmit, submitLabel, isLoading) => (
+    <form onSubmit={onSubmit} className="grid gap-4">
+      <Input
+        placeholder="Name"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        required
+      />
+      <Input
+        type="number"
+        placeholder="Price"
+        value={price}
+        onChange={(e) => setPrice(e.target.value)}
+        required
+      />
+
+      <Select value={category} onValueChange={setCategory}>
+        <SelectTrigger>
+          <SelectValue placeholder="Category" />
+        </SelectTrigger>
+        <SelectContent>
+          {categoryList.map((c) => (
+            <SelectItem key={c.category_id} value={c.category_id}>
+              {c.category_name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      <div className="grid grid-cols-3 gap-4">
+        <Input
+          placeholder="Strike Price"
+          type="number"
+          value={strikePrice}
+          onChange={(e) => setStrikePrice(e.target.value)}
+        />
+        <Input
+          placeholder="Rating"
+          type="number"
+          step="0.1"
+          value={rating}
+          onChange={(e) => setRating(e.target.value)}
+        />
+        <Select value={label} onValueChange={setLabel}>
+          <SelectTrigger>
+            <SelectValue placeholder="Label" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="hot">Hot</SelectItem>
+            <SelectItem value="viral">Viral</SelectItem>
+            <SelectItem value="new">New</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Main Image */}
+      <div className="space-y-1">
+        <p className="text-sm text-muted-foreground">
+          Main Image{" "}
+          {submitLabel === "Update Product" && "(leave empty to keep existing)"}
+        </p>
+        <Input
+          type="file"
+          onChange={(e) => {
+            const file = e.target.files[0];
+            setImageFile(file);
+            setPreviewUrl(file ? URL.createObjectURL(file) : previewUrl);
+          }}
+          required={submitLabel === "Add Product"}
+        />
+        {previewUrl && (
+          <img
+            src={previewUrl}
+            className="w-20 h-20 rounded border object-cover"
+            alt="Main preview"
+          />
+        )}
+      </div>
+
+      {/* Hover Image */}
+      <div className="space-y-1">
+        <p className="text-sm text-muted-foreground">
+          Hover Image{" "}
+          {submitLabel === "Update Product" && "(leave empty to keep existing)"}
+        </p>
+        <Input
+          type="file"
+          onChange={(e) => {
+            const file = e.target.files[0];
+            setHoverImageFile(file);
+            setHoverPreview(file ? URL.createObjectURL(file) : hoverPreview);
+          }}
+        />
+        {hoverPreview && (
+          <img
+            src={hoverPreview}
+            className="w-20 h-20 rounded border object-cover"
+            alt="Hover preview"
+          />
+        )}
+      </div>
+
+      <Button type="submit" disabled={isLoading}>
+        {isLoading
+          ? `${submitLabel === "Add Product" ? "Adding" : "Updating"}...`
+          : submitLabel}
+      </Button>
+    </form>
+  );
+
   return (
     <div className="space-y-6">
       {/* HEADER */}
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Product Management</h1>
 
-        {/* ADD */}
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        {/* ADD DIALOG */}
+        <Dialog
+          open={isAddDialogOpen}
+          onOpenChange={(open) => {
+            setIsAddDialogOpen(open);
+            if (!open) resetForm();
+          }}
+        >
           <DialogTrigger asChild>
             <Button>
               <Plus className="mr-2 w-4 h-4" /> Add Product
             </Button>
           </DialogTrigger>
-
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Add Product</DialogTitle>
             </DialogHeader>
-
-            <form onSubmit={handleAddProduct} className="grid gap-4">
-              <Input
-                placeholder="Name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
-              <Input
-                type="number"
-                placeholder="Price"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                required
-              />
-
-              <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categoryList.map((c) => (
-                    <SelectItem key={c.category_id} value={c.category_id}>
-                      {c.category_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <div className="grid grid-cols-3 gap-4">
-                <Input
-                  placeholder="Strike Price"
-                  type="number"
-                  value={strikePrice}
-                  onChange={(e) => setStrikePrice(e.target.value)}
-                />
-                <Input
-                  placeholder="Rating"
-                  type="number"
-                  step="0.1"
-                  value={rating}
-                  onChange={(e) => setRating(e.target.value)}
-                />
-                <Select value={label} onValueChange={setLabel}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Label" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="hot">Hot</SelectItem>
-                    <SelectItem value="viral">Viral</SelectItem>
-                    <SelectItem value="new">New</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* IMAGE */}
-              <Input
-                type="file"
-                onChange={(e) => {
-                  const file = e.target.files[0];
-                  setImageFile(file);
-                  setPreviewUrl(file ? URL.createObjectURL(file) : null);
-                }}
-                required
-              />
-
-              {previewUrl && (
-                <img
-                  src={previewUrl}
-                  className="w-20 h-20 rounded border object-cover"
-                />
-              )}
-
-              {/* HOVER IMAGE */}
-              <Input
-                type="file"
-                onChange={(e) => {
-                  const file = e.target.files[0];
-                  setHoverImageFile(file);
-                  setHoverPreview(file ? URL.createObjectURL(file) : null);
-                }}
-              />
-
-              {hoverPreview && (
-                <img
-                  src={hoverPreview}
-                  className="w-20 h-20 rounded border object-cover"
-                />
-              )}
-
-              <Button type="submit" disabled={loading}>
-                {loading ? "Adding..." : "Add Product"}
-              </Button>
-            </form>
+            {renderFormFields(handleAddProduct, "Add Product", loading)}
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* EDIT DIALOG */}
+      <Dialog
+        open={isEditDialogOpen}
+        onOpenChange={(open) => {
+          setIsEditDialogOpen(open);
+          if (!open) resetForm();
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Product</DialogTitle>
+          </DialogHeader>
+          {renderFormFields(handleUpdate, "Update Product", updateLoading)}
+        </DialogContent>
+      </Dialog>
 
       {/* TABLE */}
       <Card>
@@ -345,11 +376,13 @@ export function ProductManagement() {
                       <img
                         src={p.image_url || "/placeholder.png"}
                         className="w-10 h-10 rounded object-cover"
+                        alt={p.product_name}
                       />
                       {p.hover_image && (
                         <img
                           src={p.hover_image}
                           className="w-10 h-10 rounded object-cover opacity-60"
+                          alt={`${p.product_name} hover`}
                         />
                       )}
                     </div>
@@ -364,8 +397,19 @@ export function ProductManagement() {
                   </TableCell>
 
                   <TableCell className="flex gap-2">
+                    {/* EDIT BUTTON */}
                     <Button
                       size="sm"
+                      variant="outline"
+                      onClick={() => handleEdit(p)}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+
+                    {/* DELETE BUTTON */}
+                    <Button
+                      size="sm"
+                      variant="destructive"
                       disabled={deleteLoadingId === p.product_id}
                       onClick={() => handleDeleteProduct(p.product_id)}
                     >
