@@ -1,97 +1,39 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { Plus, Trash2, Pencil } from "lucide-react";
+import { Pencil, Check, X, Truck } from "lucide-react";
+// Single record delivery price management
 
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "./ui/dialog";
-
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "./ui/table";
-
 export function DeliveryPriceManagement() {
-  const [isOpen, setIsOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-
-  const [prices, setPrices] = useState([]);
-  const [price, setPrice] = useState("");
-
+  const [priceData, setPriceData] = useState(null); // single object { id, price }
   const [editPrice, setEditPrice] = useState("");
-  const [editId, setEditId] = useState(null);
-
   const [loading, setLoading] = useState(false);
 
-  // ✅ FETCH
-  const fetchPrices = async () => {
+  // ✅ FETCH single price
+  const fetchPrice = async () => {
     try {
       const res = await axios.get(
         `${import.meta.env.VITE_API_BASE_URL}/api/delivery`,
       );
-      setPrices(res.data);
+      setPriceData(res.data); // { id, price }
     } catch (err) {
       console.log(err.message);
     }
   };
 
   useEffect(() => {
-    fetchPrices();
+    fetchPrice();
   }, []);
 
-  // ✅ ADD
-  const handleAdd = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/api/delivery`,
-        { price },
-      );
-
-      if (res.status === 201 || res.status === 200) {
-        setPrice("");
-        setIsOpen(false);
-        fetchPrices();
-      }
-    } catch (err) {
-      console.log(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // ✅ DELETE
-  const handleDelete = async (id) => {
-    try {
-      await axios.delete(
-        `${import.meta.env.VITE_API_BASE_URL}/api/delivery/${id}`,
-      );
-      fetchPrices();
-    } catch (err) {
-      console.log(err.message);
-    }
-  };
-
   // ✅ OPEN EDIT
-  const openEdit = (item) => {
-    setEditId(item.id);
-    setEditPrice(item.price);
+  const openEdit = () => {
+    setEditPrice(priceData?.price || "");
     setEditOpen(true);
   };
 
@@ -99,18 +41,15 @@ export function DeliveryPriceManagement() {
   const handleUpdate = async (e) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       const res = await axios.put(
-        `${import.meta.env.VITE_API_BASE_URL}/api/delivery/${editId}`,
+        `${import.meta.env.VITE_API_BASE_URL}/api/delivery/${priceData.id}`,
         { price: editPrice },
       );
-
       if (res.status === 200) {
         setEditOpen(false);
-        setEditId(null);
         setEditPrice("");
-        fetchPrices();
+        fetchPrice();
       }
     } catch (err) {
       console.log(err.message);
@@ -123,90 +62,35 @@ export function DeliveryPriceManagement() {
     <div className="space-y-6">
       {/* HEADER */}
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Delivery Price Management</h1>
-
-        {/* ADD */}
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" /> Add Price
-            </Button>
-          </DialogTrigger>
-
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add Delivery Price</DialogTitle>
-            </DialogHeader>
-
-            <form onSubmit={handleAdd} className="space-y-4">
-              <div>
-                <Label>Price</Label>
-                <Input
-                  type="number"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  required
-                />
-              </div>
-
-              <Button type="submit" disabled={loading}>
-                {loading ? "Adding..." : "Add"}
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <h1 className="text-3xl font-bold">Delivery Price</h1>
       </div>
 
-      {/* TABLE */}
+      {/* SINGLE PRICE CARD */}
       <Card>
         <CardHeader>
-          <CardTitle>All Delivery Prices</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Truck className="w-5 h-5" />
+            Current Shipping Price
+          </CardTitle>
         </CardHeader>
 
         <CardContent>
-          {prices.length === 0 ? (
-            <p className="text-center text-sm py-10">
-              No delivery prices added.
+          {!priceData ? (
+            <p className="text-center text-sm py-10 text-muted-foreground">
+              No delivery price set.
             </p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-
-              <TableBody>
-                {prices.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell>{item.id}</TableCell>
-                    <TableCell>₹ {item.price}</TableCell>
-
-                    <TableCell className="text-right space-x-2">
-                      {/* EDIT */}
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        onClick={() => openEdit(item)}
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-
-                      {/* DELETE */}
-                      <Button
-                        size="icon"
-                        variant="destructive"
-                        onClick={() => handleDelete(item.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">
+                  Shipping charge applied on orders below ₹249
+                </p>
+                <p className="text-4xl font-bold">₹ {priceData.price}</p>
+              </div>
+              <Button variant="outline" onClick={openEdit}>
+                <Pencil className="w-4 h-4 mr-2" /> Edit Price
+              </Button>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -215,23 +99,40 @@ export function DeliveryPriceManagement() {
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Delivery Price</DialogTitle>
+            <DialogTitle>Update Delivery Price</DialogTitle>
           </DialogHeader>
 
           <form onSubmit={handleUpdate} className="space-y-4">
             <div>
-              <Label>Price</Label>
+              <Label>New Price (₹)</Label>
               <Input
                 type="number"
                 value={editPrice}
                 onChange={(e) => setEditPrice(e.target.value)}
+                placeholder="Enter shipping price"
                 required
               />
             </div>
 
-            <Button type="submit" disabled={loading}>
-              {loading ? "Updating..." : "Update"}
-            </Button>
+            <div className="flex gap-2">
+              <Button type="submit" disabled={loading} className="flex-1">
+                {loading ? (
+                  "Updating..."
+                ) : (
+                  <>
+                    <Check className="w-4 h-4 mr-2" /> Update
+                  </>
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setEditOpen(false)}
+                className="flex-1"
+              >
+                <X className="w-4 h-4 mr-2" /> Cancel
+              </Button>
+            </div>
           </form>
         </DialogContent>
       </Dialog>
