@@ -6,6 +6,7 @@ import { SidebarProvider } from "./components/ui/sidebar";
 import { CategoryMangement } from "./components/CategoryMangement";
 import { BannerManagement } from "./components/BannerManagement";
 import { TopbarManagement } from "./components/TopBar";
+import { DeliveryPriceManagement } from "./components/DeliveryPriceManagement";
 
 export default function App() {
   const [activeSection, setActiveSection] = useState("dashboard");
@@ -22,6 +23,8 @@ export default function App() {
         return <BannerManagement />;
       case "topbar":
         return <TopbarManagement />;
+      case "delivery":
+        return <DeliveryPriceManagement />;
       default:
         return <DashboardOverview />;
     }
