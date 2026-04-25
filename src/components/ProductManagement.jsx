@@ -31,7 +31,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "./ui/dialog";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Plus, Edit, Trash2, X } from "lucide-react";
 import axios from "axios";
 import { uploadToCloudinary } from "../../utils/uploadToCloudinary";
 
@@ -45,6 +45,12 @@ export function ProductManagement() {
   const [strikePrice, setStrikePrice] = useState("");
   const [rating, setRating] = useState("");
   const [label, setLabel] = useState("");
+
+  // ---- NEW FIELDS ----
+  const [stock, setStock] = useState("");
+  const [colors, setColors] = useState([]);
+  const [colorInput, setColorInput] = useState("");
+  // --------------------
 
   const [imageFile, setImageFile] = useState(null);
   const [hoverImageFile, setHoverImageFile] = useState(null);
@@ -60,6 +66,27 @@ export function ProductManagement() {
   const [loading, setLoading] = useState(false);
   const [updateLoading, setUpdateLoading] = useState(false);
   const [deleteLoadingId, setDeleteLoadingId] = useState(null);
+
+  // ---- COLOR TAG HELPERS ----
+  const handleAddColor = () => {
+    const trimmed = colorInput.trim();
+    if (trimmed && !colors.includes(trimmed)) {
+      setColors((prev) => [...prev, trimmed]);
+    }
+    setColorInput("");
+  };
+
+  const handleColorKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleAddColor();
+    }
+  };
+
+  const handleRemoveColor = (color) => {
+    setColors((prev) => prev.filter((c) => c !== color));
+  };
+  // ---------------------------
 
   // ================= ADD =================
   const handleAddProduct = async (e) => {
@@ -84,6 +111,8 @@ export function ProductManagement() {
         strikeout_price: strikePrice,
         rating,
         label,
+        stock: stock !== "" ? Number(stock) : 0,
+        colors,
       });
 
       resetForm();
@@ -121,6 +150,8 @@ export function ProductManagement() {
           strikeout_price: strikePrice,
           rating,
           label,
+          stock: stock !== "" ? Number(stock) : undefined,
+          colors,
         },
       );
 
@@ -158,6 +189,8 @@ export function ProductManagement() {
     setStrikePrice(p.strikeout_price);
     setRating(p.rating);
     setLabel(p.label);
+    setStock(p.stock ?? "");
+    setColors(Array.isArray(p.colors) ? p.colors : []);
     setIsEditDialogOpen(true);
   };
 
@@ -170,6 +203,13 @@ export function ProductManagement() {
     setRating("");
     setLabel("");
     setProductId("");
+    setStock("");
+    setColors([]);
+    setColorInput("");
+    setPreviewUrl(null);
+    setHoverPreview(null);
+    setImageFile(null);
+    setHoverImageFile(null);
   };
 
   // ================= FETCH =================
@@ -246,6 +286,51 @@ export function ProductManagement() {
             <SelectItem value="new">New</SelectItem>
           </SelectContent>
         </Select>
+      </div>
+
+      {/* ---- STOCK ---- */}
+      <Input
+        type="number"
+        placeholder="Stock quantity"
+        value={stock}
+        min="0"
+        onChange={(e) => setStock(e.target.value)}
+      />
+
+      {/* ---- COLORS ---- */}
+      <div className="space-y-2">
+        <p className="text-sm text-muted-foreground">Colors</p>
+        <div className="flex gap-2">
+          <Input
+            placeholder="e.g. Red, #FF0000"
+            value={colorInput}
+            onChange={(e) => setColorInput(e.target.value)}
+            onKeyDown={handleColorKeyDown}
+          />
+          <Button type="button" variant="outline" onClick={handleAddColor}>
+            Add
+          </Button>
+        </div>
+        {colors.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {colors.map((color) => (
+              <Badge
+                key={color}
+                variant="secondary"
+                className="flex items-center gap-1 pr-1"
+              >
+                {color}
+                <button
+                  type="button"
+                  onClick={() => handleRemoveColor(color)}
+                  className="ml-1 rounded-full hover:bg-muted"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </Badge>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Main Image */}
@@ -364,6 +449,8 @@ export function ProductManagement() {
                 <TableHead>Original Price</TableHead>
                 <TableHead>Rating</TableHead>
                 <TableHead>Label</TableHead>
+                <TableHead>Stock</TableHead>
+                <TableHead>Colors</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -394,6 +481,43 @@ export function ProductManagement() {
                   <TableCell>{p.rating}</TableCell>
                   <TableCell>
                     <Badge>{p.label}</Badge>
+                  </TableCell>
+
+                  {/* ---- NEW: STOCK ---- */}
+                  <TableCell>
+                    <span
+                      className={
+                        p.stock === 0
+                          ? "text-destructive font-medium"
+                          : "text-foreground"
+                      }
+                    >
+                      {p.stock ?? 0}
+                    </span>
+                    {p.in_stock === false && (
+                      <Badge variant="destructive" className="ml-2 text-xs">
+                        Out
+                      </Badge>
+                    )}
+                  </TableCell>
+
+                  {/* ---- NEW: COLORS ---- */}
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {Array.isArray(p.colors) && p.colors.length > 0 ? (
+                        p.colors.map((color) => (
+                          <Badge
+                            key={color}
+                            variant="outline"
+                            className="text-xs"
+                          >
+                            {color}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-muted-foreground text-xs">—</span>
+                      )}
+                    </div>
                   </TableCell>
 
                   <TableCell className="flex gap-2">
