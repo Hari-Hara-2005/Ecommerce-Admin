@@ -1,5 +1,5 @@
 export const uploadToCloudinary = async (file) => {
-    const cloudName = "dlahzfpmk";
+    const cloudName = "di7cxkakc";
     const preset = "Test_first_time";
 
     const formData = new FormData();
